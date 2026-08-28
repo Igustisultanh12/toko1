@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Hilangkan margin default PDF agar tidak geser */
+        @page { margin: 0; }
+        
+        body {
+            font-family: 'Courier', monospace;
+            font-size: 9pt;
+            margin: 0;
+            padding: 0;
+            width: 164pt; /* Kunci lebar sesuai ukuran kertas thermal */
+            background-color: #ffffff;
+        }
+
+        .receipt-wrapper {
+            width: 100%;
+            padding: 10pt;
+            box-sizing: border-box;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .separator { border-top: 1px dashed #000; margin: 5pt 0; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        td { vertical-align: top; }
+
+        .header h3 { margin: 0; font-size: 11pt; }
+        .header p { margin: 2pt 0; font-size: 8pt; }
+        .footer { margin-top: 10pt; font-size: 8pt; }
+    </style>
+</head>
+<body>
+    <div class="receipt-wrapper">
+        <div class="header text-center">
+            <h3>NAMA TOKO ANDA</h3>
+            <p>Jalan Alamat Toko No. 10</p>
+            <p>Telp: 0812-3456-78</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <table style="font-size: 8pt;">
+            <tr><td>No: {{ $sale->id }}</td><td class="text-right">{{ $sale->created_at->format('d/m/y H:i') }}</td></tr>
+            <tr><td>Kasir: {{ $sale->user->name ?? 'Kasir' }}</td></tr>
+        </table>
+
+        <div class="separator"></div>
+
+        <table>
+            @foreach($sale->saleDetails as $detail)
+            <tr>
+                <td colspan="2" class="bold">{{ $detail->product->name }}</td>
+            </tr>
+            <tr>
+                <td>{{ $detail->quantity }} x {{ number_format($detail->price_at_transaction, 0, ',', '.') }}</td>
+                <td class="text-right">{{ number_format($detail->quantity * $detail->price_at_transaction, 0, ',', '.') }}</td>
+            </tr>
+            @endforeach
+        </table>
+
+        <div class="separator"></div>
+
+        <table class="bold">
+            <tr><td>TOTAL</td><td class="text-right">{{ number_format($sale->total_amount, 0, ',', '.') }}</td></tr>
+            <tr><td>BAYAR</td><td class="text-right">{{ number_format($sale->amount_paid, 0, ',', '.') }}</td></tr>
+            <tr><td>KEMBALI</td><td class="text-right">{{ number_format($sale->amount_paid - $sale->total_amount, 0, ',', '.') }}</td></tr>
+        </table>
+
+        <div class="separator"></div>
+
+        <div class="footer text-center">
+            <p class="bold">Terima Kasih!</p>
+            <p>Barang yang dibeli tidak dapat dikembalikan.</p>
+        </div>
+    </div>
+</body>
+</html>

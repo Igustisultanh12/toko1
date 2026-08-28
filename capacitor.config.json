@@ -1,0 +1,10 @@
+{
+  "appId": "com.sikanda.id",
+  "appName": "SIKANDA MOBILE",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://anandatoko.my.id",
+    "cleartext": true
+  }
+}

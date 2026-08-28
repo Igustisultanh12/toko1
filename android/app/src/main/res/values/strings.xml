@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SIKANDA MOBILE</string>
+    <string name="title_activity_main">SIKANDA MOBILE</string>
+    <string name="package_name">id.my.anandatoko.sikanda</string>
+    <string name="custom_url_scheme">id.my.anandatoko.sikanda</string>
+</resources>

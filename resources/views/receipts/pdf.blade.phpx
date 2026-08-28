@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Struk Pembayaran #{{ $sale->id }}</title>
+    <style>
+        /* Menggunakan font monospace agar karakter memiliki lebar yang sama, sangat penting untuk perataan */
+        body {
+            font-family: 'monospace', 'Courier New', Courier;
+            font-size: 10pt; /* Ukuran font standar untuk struk */
+            color: #000;
+            width: 58mm; /* Lebar kertas printer thermal */
+            margin: 0;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            padding: 0;
+        }
+        .header, .footer {
+            text-align: center;
+        }
+        .header h3 {
+            margin: 0;
+            font-size: 12pt;
+        }
+        .header p {
+            margin: 2px 0;
+            font-size: 8pt;
+        }
+        .separator {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        /* Menghilangkan padding agar lebih rapat */
+        td, th {
+            padding: 2px 0;
+        }
+        .item-name {
+            text-align: left;
+        }
+        .item-qty {
+            text-align: center;
+        }
+        .item-price, .item-subtotal {
+            text-align: right;
+        }
+        .summary-table {
+            width: 100%;
+            margin-top: 5px;
+        }
+        .summary-table td {
+            font-size: 10pt;
+            padding: 1px 0;
+        }
+        .summary-label {
+            text-align: left;
+        }
+        .summary-value {
+            text-align: right;
+        }
+        /* Mengatur style saat di-print */
+        @media print {
+            @page {
+                size: 58mm auto; /* Mengatur ukuran kertas saat dialog print muncul */
+                margin: 0;
+            }
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h3>NAMA TOKO ANDA</h3>
+            <p>Jalan Alamat Toko No. 123, Kota Anda</p>
+            <p>Telp: 0812-3456-7890</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <div>
+            <p style="margin: 2px 0; font-size: 8pt;">
+                No: {{ $sale->id }} <br>
+                Kasir: {{ $sale->user->name ?? 'N/A' }} <br>
+                Tanggal: {{ $sale->created_at->format('d/m/Y H:i') }}
+            </p>
+        </div>
+
+        <div class="separator"></div>
+
+        <table>
+            <tbody>
+                @foreach($sale->saleDetails as $detail)
+                <tr>
+                    <td colspan="4" class="item-name">{{ $detail->product->name }}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="item-qty">{{ $detail->quantity }} x</td>
+                    <td class="item-price">{{ number_format($detail->price_per_unit, 0, ',', '.') }}</td>
+                    <td class="item-subtotal">{{ number_format($detail->quantity * $detail->price_per_unit, 0, ',', '.') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <div class="separator"></div>
+
+        <table class="summary-table">
+            <tr>
+                <td class="summary-label">Total</td>
+                <td class="summary-value">{{ number_format($sale->total_amount, 0, ',', '.') }}</td>
+            </tr>
+            @if($sale->payment_method === 'cash')
+            <tr>
+                <td class="summary-label">Bayar</td>
+                <td class="summary-value">{{ number_format($sale->amount_paid, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="summary-label">Kembali</td>
+                <td class="summary-value">{{ number_format($sale->amount_paid - $sale->total_amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+        </table>
+        
+        <div class="separator"></div>
+
+        <div class="footer">
+            <p style="font-size: 9pt;">Terima Kasih!</p>
+            <p style-="font-size: 8pt;">Barang yang dibeli tidak dapat dikembalikan.</p>
+        </div>
+    </div>
+
+    <script>
+        // Otomatis membuka dialog print saat halaman selesai dimuat
+        window.onload = function() {
+            window.print();
+            // Anda bisa aktifkan window.close() jika ingin tab/jendela otomatis tertutup setelah print.
+            // Namun beberapa browser modern mungkin memblokirnya.
+            // setTimeout(function(){ window.close(); }, 1000);
+        };
+    </script>
+</body>
+</html>
