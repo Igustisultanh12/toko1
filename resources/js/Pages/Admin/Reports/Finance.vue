@@ -119,29 +119,29 @@
       </div>
 
       <!-- STATISTIK RINGKASAN KEUANGAN -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="bg-gradient-to-r from-[#00360D] to-[#005B16] p-6 rounded-3xl shadow-xl text-white space-y-1 sm:col-span-1 col-span-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gradient-to-r from-[#00360D] via-[#004D13] to-[#005B16] p-6 rounded-3xl shadow-xl text-white space-y-1">
           <p class="text-[10px] font-black text-emerald-200 uppercase tracking-widest">Total Pemasukan Kas Bersih</p>
-          <h3 class="text-2xl font-black">{{ formatRupiah(stats.total_income) }}</h3>
-          <p class="text-[10px] text-emerald-200/80 font-bold">● Setelah Potongan MDR QRIS (0.7%)</p>
+          <h3 class="text-xl sm:text-2xl font-black tracking-tight break-words text-white mt-1">{{ formatRupiah(stats.total_income) }}</h3>
+          <p class="text-[10px] text-emerald-200/80 font-bold mt-1">● Setelah Potongan MDR (0.7%)</p>
         </div>
 
         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kas Masuk Tunai</p>
-          <h3 class="text-2xl font-black text-[#00880F]">{{ formatRupiah(stats.cash_income) }}</h3>
-          <p class="text-[10px] text-emerald-600 font-bold">{{ stats.cash_count }} transaksi tunai</p>
+          <h3 class="text-xl sm:text-2xl font-black text-[#00880F] tracking-tight break-words">{{ formatRupiah(stats.cash_income) }}</h3>
+          <p class="text-[10px] text-emerald-600 font-bold mt-1">{{ stats.cash_count }} transaksi tunai</p>
         </div>
 
         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">QRIS Bersih Diterima</p>
-          <h3 class="text-2xl font-black text-purple-700">{{ formatRupiah(stats.qris_income) }}</h3>
-          <p class="text-[10px] text-slate-400 font-bold">MDR 0.7%: <span class="text-rose-500 font-black">-{{ formatRupiah(stats.qris_fee) }}</span></p>
+          <h3 class="text-xl sm:text-2xl font-black text-purple-700 tracking-tight break-words">{{ formatRupiah(stats.qris_income) }}</h3>
+          <p class="text-[10px] text-slate-400 font-bold mt-1">MDR 0.7%: <span class="text-rose-500 font-black">-{{ formatRupiah(stats.qris_fee) }}</span></p>
         </div>
 
         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum Lunas (Pending)</p>
-          <h3 class="text-2xl font-black text-amber-600">{{ formatRupiah(stats.pending_income) }}</h3>
-          <p class="text-[10px] text-amber-600 font-bold">{{ stats.pending_count }} invoice menunggu</p>
+          <h3 class="text-xl sm:text-2xl font-black text-amber-600 tracking-tight break-words">{{ formatRupiah(stats.pending_income) }}</h3>
+          <p class="text-[10px] text-amber-600 font-bold mt-1">{{ stats.pending_count }} invoice menunggu</p>
         </div>
       </div>
 

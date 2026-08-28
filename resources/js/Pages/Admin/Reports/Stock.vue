@@ -89,35 +89,44 @@
       </div>
 
       <!-- STATISTIK RINGKASAN STOK -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div class="bg-gradient-to-r from-[#00360D] to-[#005B16] p-6 rounded-3xl shadow-xl text-white space-y-1 sm:col-span-1 col-span-2">
-          <p class="text-[10px] font-black text-emerald-200 uppercase tracking-widest">Estimasi Valuasi Aset</p>
-          <h3 class="text-xl sm:text-2xl font-black">{{ formatRupiah(stats.total_valuation) }}</h3>
-          <p class="text-[10px] text-emerald-200/80 font-bold">● Total Aset Barang</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+        <!-- Total Valuasi (4 Span di Desktop) -->
+        <div class="lg:col-span-4 bg-gradient-to-r from-[#00360D] via-[#004D13] to-[#00661A] p-6 rounded-3xl shadow-xl text-white space-y-1 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-[10px] font-black uppercase mb-1 border border-white/10">
+              <span>💎</span>
+              <span>Estimasi Valuasi Aset</span>
+            </div>
+            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white mt-1 break-words">
+              {{ formatRupiah(stats.total_valuation) }}
+            </h3>
+          </div>
+          <p class="text-[10px] text-emerald-200/80 font-bold mt-2">● Nilai Total Aset Fisik di Gudang Toko</p>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Macam Produk</p>
-          <h3 class="text-2xl font-black text-slate-900">{{ stats.total_products_count }} <span class="text-xs text-slate-400">Item</span></h3>
-          <p class="text-[10px] text-slate-400 font-bold">Katalog Terdaftar</p>
+        <!-- 4 Sub Kartu (Masing-masing 2 Span di Desktop) -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1 flex flex-col justify-between">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Macam Produk</p>
+          <h3 class="text-2xl font-black text-slate-900">{{ stats.total_products_count }} <span class="text-xs text-slate-400 font-bold">Item</span></h3>
+          <p class="text-[9px] text-slate-400 font-bold">Katalog Terdaftar</p>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Kuantitas Fisik</p>
-          <h3 class="text-2xl font-black text-blue-600">{{ stats.total_physical_stock }} <span class="text-xs text-slate-400">pcs</span></h3>
-          <p class="text-[10px] text-blue-500 font-bold">Seluruh Unit</p>
+        <div class="lg:col-span-2 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1 flex flex-col justify-between">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Kuantitas Fisik</p>
+          <h3 class="text-2xl font-black text-blue-600">{{ stats.total_physical_stock }} <span class="text-xs text-slate-400 font-bold">pcs</span></h3>
+          <p class="text-[9px] text-blue-500 font-bold">Seluruh Unit Barang</p>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stok Menipis (≤10)</p>
-          <h3 class="text-2xl font-black text-amber-600">{{ stats.low_stock_count }} <span class="text-xs text-slate-400">Item</span></h3>
-          <p class="text-[10px] text-amber-600 font-bold">Perlu Restock</p>
+        <div class="lg:col-span-2 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1 flex flex-col justify-between">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Stok Menipis (≤10)</p>
+          <h3 class="text-2xl font-black text-amber-600">{{ stats.low_stock_count }} <span class="text-xs text-slate-400 font-bold">Item</span></h3>
+          <p class="text-[9px] text-amber-600 font-bold">Perlu Restock</p>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-1">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stok Habis (0)</p>
-          <h3 class="text-2xl font-black text-rose-600">{{ stats.empty_stock_count }} <span class="text-xs text-slate-400">Item</span></h3>
-          <p class="text-[10px] text-rose-500 font-bold">Kosong di Gudang</p>
+        <div class="lg:col-span-2 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1 flex flex-col justify-between">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Stok Habis (0)</p>
+          <h3 class="text-2xl font-black text-rose-600">{{ stats.empty_stock_count }} <span class="text-xs text-slate-400 font-bold">Item</span></h3>
+          <p class="text-[9px] text-rose-500 font-bold">Kosong di Gudang</p>
         </div>
       </div>
 
