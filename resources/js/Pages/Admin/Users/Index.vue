@@ -73,51 +73,74 @@
         </table>
       </div>
 
-      <!-- MODAL TAMBAH / EDIT USER -->
-      <div v-if="isModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-6 shadow-2xl border border-slate-100">
-          <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-            <h3 class="font-black text-base uppercase text-slate-900">
-              {{ editingUser ? 'Edit Akun Petugas' : 'Tambah Akun Petugas' }}
-            </h3>
-            <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-700 font-black">✕</button>
+      <!-- MODAL TAMBAH / EDIT USER (TELEPORT TO BODY) -->
+      <Teleport to="body">
+        <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div v-if="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" @click="isModalOpen = false"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition
+                enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+              >
+                <div class="relative w-full max-w-md bg-white rounded-3xl p-6 space-y-6 shadow-2xl border border-slate-100 text-left z-10">
+                  <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 class="font-black text-base uppercase text-slate-900">
+                      {{ editingUser ? 'Edit Akun Petugas' : 'Tambah Akun Petugas' }}
+                    </h3>
+                    <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-700 font-black">✕</button>
+                  </div>
+
+                  <form @submit.prevent="submitUser" class="space-y-4 text-xs">
+                    <div>
+                      <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nama Lengkap</label>
+                      <input v-model="userForm.name" type="text" required class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Login</label>
+                      <input v-model="userForm.email" type="email" required class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Peran (Role)</label>
+                      <select v-model="userForm.role" required class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
+                        <option value="kasir">Kasir</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        {{ editingUser ? 'Password Baru (Kosongkan jika tidak diubah)' : 'Password' }}
+                      </label>
+                      <input v-model="userForm.password" :required="!editingUser" type="password" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      class="w-full py-4 bg-[#00AA13] hover:bg-[#00880F] text-white rounded-2xl font-black uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition mt-2"
+                    >
+                      Simpan Akun
+                    </button>
+                  </form>
+                </div>
+              </Transition>
+            </div>
           </div>
-
-          <form @submit.prevent="submitUser" class="space-y-4 text-xs">
-            <div>
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nama Lengkap</label>
-              <input v-model="userForm.name" type="text" required class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Login</label>
-              <input v-model="userForm.email" type="email" required class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Peran (Role)</label>
-              <select v-model="userForm.role" required class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
-                <option value="kasir">Kasir</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                {{ editingUser ? 'Password Baru (Kosongkan jika tidak diubah)' : 'Password' }}
-              </label>
-              <input v-model="userForm.password" :required="!editingUser" type="password" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-[#00AA13]">
-            </div>
-
-            <button 
-              type="submit" 
-              class="w-full py-4 bg-[#00AA13] hover:bg-[#00880F] text-white rounded-2xl font-black uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition mt-2"
-            >
-              Simpan Akun
-            </button>
-          </form>
-        </div>
-      </div>
+        </Transition>
+      </Teleport>
 
     </div>
   </AdminLayout>

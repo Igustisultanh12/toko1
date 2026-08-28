@@ -121,12 +121,23 @@
       </div>
     </aside>
 
-    <!-- BACKDROP MOBILE MENU -->
-    <div 
-      v-if="isMobileMenuOpen" 
-      @click="isMobileMenuOpen = false" 
-      class="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
-    ></div>
+    <!-- BACKDROP MOBILE MENU (TELEPORT TO BODY) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition-opacity duration-300 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition-opacity duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div 
+          v-if="isMobileMenuOpen" 
+          @click="isMobileMenuOpen = false" 
+          class="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm"
+        ></div>
+      </Transition>
+    </Teleport>
 
     <!-- MAIN CONTENT AREA -->
     <div class="flex-1 flex flex-col min-w-0">

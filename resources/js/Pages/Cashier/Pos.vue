@@ -163,81 +163,127 @@
       </div>
     </div>
 
-    <!-- MODAL PEMBAYARAN TUNAI -->
-    <div v-if="isCashModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-6 shadow-2xl border border-slate-100">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-          <h3 class="font-black text-base uppercase text-slate-900">💵 Pembayaran Tunai (Cash)</h3>
-          <button @click="isCashModalOpen = false" class="text-slate-400 hover:text-slate-700 font-black">✕</button>
-        </div>
+    <!-- MODAL PEMBAYARAN TUNAI (TELEPORT TO BODY) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="isCashModalOpen" class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" @click="isCashModalOpen = false"></div>
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition
+              enter-active-class="transition duration-300 ease-out"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition duration-200 ease-in"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
+            >
+              <div class="relative w-full max-w-md bg-white rounded-3xl p-6 space-y-6 shadow-2xl border border-slate-100 text-left z-10">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <h3 class="font-black text-base uppercase text-slate-900">💵 Pembayaran Tunai (Cash)</h3>
+                  <button @click="isCashModalOpen = false" class="text-slate-400 hover:text-slate-700 font-black">✕</button>
+                </div>
 
-        <div class="p-4 bg-emerald-50 rounded-2xl text-center space-y-1">
-          <span class="text-[10px] font-black uppercase text-slate-400">Total Tagihan:</span>
-          <p class="text-2xl font-black text-[#00880F]">{{ formatRupiah(totalAmount) }}</p>
-        </div>
+                <div class="p-4 bg-emerald-50 rounded-2xl text-center space-y-1">
+                  <span class="text-[10px] font-black uppercase text-slate-400">Total Tagihan:</span>
+                  <p class="text-2xl font-black text-[#00880F]">{{ formatRupiah(totalAmount) }}</p>
+                </div>
 
-        <div class="space-y-2">
-          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Uang Diterima (Rp):</label>
-          <input 
-            v-model="cashGiven" 
-            type="number" 
-            class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xl font-black text-slate-800 outline-none focus:border-[#00AA13] focus:bg-white"
-            placeholder="0"
-          >
-          <div class="grid grid-cols-3 gap-2 pt-2">
-            <button @click="cashGiven = totalAmount" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black">Uang Pas</button>
-            <button @click="cashGiven = 50000" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black">50.000</button>
-            <button @click="cashGiven = 100000" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black">100.000</button>
+                <div class="space-y-2">
+                  <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Uang Diterima (Rp):</label>
+                  <input 
+                    v-model="cashGiven" 
+                    type="number" 
+                    class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xl font-black text-slate-800 outline-none focus:border-[#00AA13] focus:bg-white"
+                    placeholder="0"
+                  >
+                  <div class="grid grid-cols-3 gap-2 pt-2">
+                    <button @click="cashGiven = totalAmount" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black">Uang Pas</button>
+                    <button @click="cashGiven = 50000" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black">50.000</button>
+                    <button @click="cashGiven = 100000" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black">100.000</button>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 rounded-2xl flex justify-between items-center text-xs">
+                  <span class="font-bold text-slate-500">Kembalian:</span>
+                  <span class="text-base font-black text-slate-900">{{ formatRupiah(changeAmount) }}</span>
+                </div>
+
+                <button 
+                  @click="submitCashSale" 
+                  :disabled="cashGiven < totalAmount || isSubmitting"
+                  class="w-full py-4 bg-[#00AA13] hover:bg-[#00880F] disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition"
+                >
+                  {{ isSubmitting ? 'Memproses...' : 'Selesaikan Transaksi (Cetak Struk)' }}
+                </button>
+              </div>
+            </Transition>
           </div>
         </div>
+      </Transition>
+    </Teleport>
 
-        <div class="p-4 bg-slate-50 rounded-2xl flex justify-between items-center text-xs">
-          <span class="font-bold text-slate-500">Kembalian:</span>
-          <span class="text-base font-black text-slate-900">{{ formatRupiah(changeAmount) }}</span>
-        </div>
+    <!-- MODAL PEMBAYARAN QRIS DOKU (TELEPORT TO BODY) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="isQrisModalOpen" class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" @click="closeQrisModal"></div>
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition
+              enter-active-class="transition duration-300 ease-out"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition duration-200 ease-in"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
+            >
+              <div class="relative w-full max-w-lg bg-white rounded-3xl p-6 space-y-6 shadow-2xl border border-slate-100 text-center z-10">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <h3 class="font-black text-base uppercase text-slate-900">⚡ QRIS Payment Gateway</h3>
+                  <button @click="closeQrisModal" class="text-slate-400 hover:text-slate-700 font-black">✕</button>
+                </div>
 
-        <button 
-          @click="submitCashSale" 
-          :disabled="cashGiven < totalAmount || isSubmitting"
-          class="w-full py-4 bg-[#00AA13] hover:bg-[#00880F] disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 transition"
-        >
-          {{ isSubmitting ? 'Memproses...' : 'Selesaikan Transaksi (Cetak Struk)' }}
-        </button>
-      </div>
-    </div>
+                <div class="p-4 bg-emerald-50 rounded-2xl space-y-1">
+                  <span class="text-[10px] font-black uppercase text-slate-400">Total Tagihan:</span>
+                  <p class="text-2xl font-black text-[#00880F]">{{ formatRupiah(totalAmount) }}</p>
+                </div>
 
-    <!-- MODAL PEMBAYARAN QRIS DOKU -->
-    <div v-if="isQrisModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-lg rounded-3xl p-6 space-y-6 shadow-2xl border border-slate-100 text-center">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-          <h3 class="font-black text-base uppercase text-slate-900">⚡ QRIS Payment Gateway</h3>
-          <button @click="closeQrisModal" class="text-slate-400 hover:text-slate-700 font-black">✕</button>
-        </div>
+                <div class="bg-slate-50 p-4 rounded-2xl min-h-[350px] flex items-center justify-center">
+                  <iframe v-if="qrisUrl" :src="qrisUrl" class="w-full h-[400px] border-0 rounded-xl bg-white"></iframe>
+                  <div v-else class="space-y-2">
+                    <div class="w-10 h-10 border-4 border-[#00AA13] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-xs font-bold text-slate-500">Membuat QRIS DOKU...</p>
+                  </div>
+                </div>
 
-        <div class="p-4 bg-emerald-50 rounded-2xl space-y-1">
-          <span class="text-[10px] font-black uppercase text-slate-400">Total Tagihan:</span>
-          <p class="text-2xl font-black text-[#00880F]">{{ formatRupiah(totalAmount) }}</p>
-        </div>
-
-        <div class="bg-slate-50 p-4 rounded-2xl min-h-[350px] flex items-center justify-center">
-          <iframe v-if="qrisUrl" :src="qrisUrl" class="w-full h-[400px] border-0 rounded-xl bg-white"></iframe>
-          <div v-else class="space-y-2">
-            <div class="w-10 h-10 border-4 border-[#00AA13] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p class="text-xs font-bold text-slate-500">Membuat QRIS DOKU...</p>
+                <div class="flex justify-between items-center text-xs">
+                  <div class="flex items-center space-x-2 text-[#00661A] font-bold">
+                    <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span>Menunggu Pembayaran Kasir...</span>
+                  </div>
+                  <button @click="forceConfirmQris" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-black text-[10px] uppercase">
+                    Konfirmasi Manual
+                  </button>
+                </div>
+              </div>
+            </Transition>
           </div>
         </div>
-
-        <div class="flex justify-between items-center text-xs">
-          <div class="flex items-center space-x-2 text-[#00661A] font-bold">
-            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-            <span>Menunggu Pembayaran Kasir...</span>
-          </div>
-          <button @click="forceConfirmQris" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-black text-[10px] uppercase">
-            Konfirmasi Manual
-          </button>
-        </div>
-      </div>
-    </div>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>
