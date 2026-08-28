@@ -5,7 +5,7 @@
     <!-- TOPBAR KASIR POS -->
     <header class="bg-[#00360D] text-white px-6 py-3.5 flex items-center justify-between shadow-md shrink-0">
       <div class="flex items-center space-x-3">
-        <Link href="/admin/dashboard" class="w-9 h-9 rounded-2xl bg-[#00AA13] flex items-center justify-center text-white text-lg font-black shadow-md hover:scale-105 transition">
+        <Link href="/dashboard" class="w-9 h-9 rounded-2xl bg-[#00AA13] flex items-center justify-center text-white text-lg font-black shadow-md hover:scale-105 transition">
           ⚡
         </Link>
         <div>
@@ -19,7 +19,7 @@
           <p class="text-xs font-black text-white leading-none">{{ $page.props.auth?.user?.name || 'Kasir' }}</p>
           <p class="text-[9px] text-emerald-400 font-bold uppercase mt-0.5">{{ currentTime }}</p>
         </div>
-        <Link href="/admin/dashboard" class="px-3.5 py-2 bg-emerald-900/80 hover:bg-[#00AA13] text-white rounded-xl text-xs font-black uppercase tracking-wider transition border border-emerald-700">
+        <Link href="/dashboard" class="px-3.5 py-2 bg-emerald-900/80 hover:bg-[#00AA13] text-white rounded-xl text-xs font-black uppercase tracking-wider transition border border-emerald-700">
           Dashboard
         </Link>
       </div>
