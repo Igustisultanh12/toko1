@@ -23,8 +23,8 @@
         <!-- NAVIGATION LINKS -->
         <nav class="space-y-1.5">
           <Link 
-            href="/admin/dashboard" 
-            :class="isActive('/admin/dashboard') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            href="/dashboard" 
+            :class="isActive('/dashboard') || isActive('/admin/dashboard') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
             class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
           >
             <span class="text-base">📊</span>
@@ -60,11 +60,38 @@
 
           <Link 
             href="/admin/reports" 
-            :class="isActive('/admin/reports') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            :class="isActive('/admin/reports') && !isActive('/admin/reports/stock') && !isActive('/admin/reports/finance') && !isActive('/admin/reports/qris') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
             class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
           >
             <span class="text-base">📈</span>
             <span>Laporan Penjualan</span>
+          </Link>
+
+          <Link 
+            href="/admin/reports/stock" 
+            :class="isActive('/admin/reports/stock') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
+          >
+            <span class="text-base">📦</span>
+            <span>Laporan Stok</span>
+          </Link>
+
+          <Link 
+            href="/admin/reports/finance" 
+            :class="isActive('/admin/reports/finance') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
+          >
+            <span class="text-base">💰</span>
+            <span>Laporan Keuangan</span>
+          </Link>
+
+          <Link 
+            href="/admin/reports/qris" 
+            :class="isActive('/admin/reports/qris') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
+          >
+            <span class="text-base">📱</span>
+            <span>Laporan QRIS</span>
           </Link>
 
           <Link 
@@ -95,8 +122,8 @@
           </Link>
 
           <Link 
-            href="/admin/manual" 
-            :class="isActive('/admin/manual') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            href="/admin/manual-guide" 
+            :class="isActive('/admin/manual-guide') || isActive('/admin/manual') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
             class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
           >
             <span class="text-base">📖</span>

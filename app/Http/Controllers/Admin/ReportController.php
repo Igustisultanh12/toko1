@@ -134,13 +134,7 @@ class ReportController extends Controller
         // Transaksi dengan pagination untuk web
         $transactions = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-        return \Inertia\Inertia::render('Admin/Reports/Index', [
-            'sales'              => $transactions,
-            'total_revenue'      => (float) $stats['total_revenue'],
-            'total_sales_count'  => (int) $stats['total_transactions'],
-            'total_items_sold'   => (int) $stats['total_items_sold'],
-            'filters'            => $filters,
-        ]);
+        return view('reports.index', compact('transactions', 'stats', 'periodLabel', 'filters'));
     }
 
     /**

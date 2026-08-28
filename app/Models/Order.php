@@ -49,6 +49,11 @@ class Order extends Model
         return $this->hasMany(OrderComplaint::class, 'order_id');
     }
 
+    public function complaint()
+    {
+        return $this->hasOne(OrderComplaint::class, 'order_id')->latestOfMany();
+    }
+
     public function latestComplaint()
     {
         return $this->hasOne(OrderComplaint::class, 'order_id')->latestOfMany();

@@ -137,12 +137,19 @@ Route::get('/storage/{path}', function ($path) {
     return response()->file($filePath);
 })->where('path', '.*')->name('storage.fallback');
 
+Route::get('/admin', function () {
+    return redirect()->route('dashboard');
+});
+
 /**
  * 3. RUTE TERPROTEKSI (LOGIN WAJIB)
  */
 Route::middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/admin/dashboard', function () {
+        return redirect()->route('dashboard');
+    });
     Route::get('/api/dashboard/live-stats', [DashboardController::class, 'liveStats'])->name('dashboard.live-stats');
     
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -122,6 +122,17 @@
             </div>
             <span>Pengaturan Toko</span>
         </a>
+
+        {{-- PUSAT BACKUP & MIGRASI DATA --}}
+        <a href="{{ route('admin.backup.index') }}" 
+           class="flex items-center space-x-3 px-4 py-3 rounded-2xl transition font-black text-xs uppercase tracking-wider {{ request()->routeIs('admin.backup.*') ? 'bg-white text-[#00661A] shadow-lg shadow-black/10' : 'text-emerald-100 hover:bg-white/10' }}">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center {{ request()->routeIs('admin.backup.*') ? 'bg-emerald-100 text-[#00880F]' : 'bg-white/10 text-white' }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+            </div>
+            <span>Backup & Migrasi</span>
+        </a>
     @endif
 
     {{-- BUKU PANDUAN PENGGUNA (KASIR & ADMIN) --}}
