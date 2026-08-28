@@ -22,6 +22,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 *.zip
-*BACKUP*
-*Backup*
-*backup*
+/storage/app/BACKUP_*
+/storage/app/temp_backup_*
+/storage/app/temp_restore_*
