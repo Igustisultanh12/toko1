@@ -432,20 +432,55 @@ class BackupController extends Controller
     }
 
     /**
-     * Helper: Kumpulkan Semua Data Database ke dalam Array
+     * Helper: Kumpulkan Semua Data Database Secara Dinamis dan Lengkap
      */
     private function collectAllData(): array
     {
-        $tables = [
-            'settings'         => DB::table('settings')->get()->map(fn($r) => (array) $r)->toArray(),
-            'users'            => DB::table('users')->get()->map(fn($r) => (array) $r)->toArray(),
-            'products'         => DB::table('products')->get()->map(fn($r) => (array) $r)->toArray(),
-            'sales'            => DB::table('sales')->get()->map(fn($r) => (array) $r)->toArray(),
-            'sale_details'     => DB::table('sale_details')->get()->map(fn($r) => (array) $r)->toArray(),
-            'orders'           => Schema::hasTable('orders') ? DB::table('orders')->get()->map(fn($r) => (array) $r)->toArray() : [],
-            'order_items'      => Schema::hasTable('order_items') ? DB::table('order_items')->get()->map(fn($r) => (array) $r)->toArray() : [],
-            'order_complaints' => Schema::hasTable('order_complaints') ? DB::table('order_complaints')->get()->map(fn($r) => (array) $r)->toArray() : [],
+        $tables = [];
+        $driver = DB::getDriverName();
+        $allTableNames = [];
+
+        try {
+            if ($driver === 'mysql') {
+                $tablesResult = DB::select('SHOW TABLES');
+                foreach ($tablesResult as $tblObj) {
+                    $tblArr = (array) $tblObj;
+                    $allTableNames[] = reset($tblArr);
+                }
+            } elseif ($driver === 'sqlite') {
+                $tablesResult = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                foreach ($tablesResult as $tblObj) {
+                    $allTableNames[] = $tblObj->name;
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning("Gagal mengambil nama tabel dinamis: " . $e->getMessage());
+        }
+
+        if (empty($allTableNames)) {
+            $allTableNames = [
+                'settings', 'users', 'products', 'customers', 'sales', 'sale_details', 
+                'orders', 'order_items', 'order_complaints', 'sessions'
+            ];
+        }
+
+        $excludeTables = ['cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'migrations'];
+        $priorityOrder = [
+            'settings', 'users', 'products', 'customers', 'sales', 'sale_details', 
+            'orders', 'order_items', 'order_complaints'
         ];
+        $sortedTableNames = array_unique(array_merge($priorityOrder, $allTableNames));
+
+        foreach ($sortedTableNames as $tblName) {
+            if (in_array($tblName, $excludeTables)) continue;
+            if (Schema::hasTable($tblName)) {
+                try {
+                    $tables[$tblName] = DB::table($tblName)->get()->map(fn($r) => (array) $r)->toArray();
+                } catch (\Exception $e) {
+                    Log::warning("Gagal membaca tabel {$tblName}: " . $e->getMessage());
+                }
+            }
+        }
 
         $counts = array_map('count', $tables);
 
@@ -503,7 +538,7 @@ class BackupController extends Controller
     }
 
     /**
-     * Helper: Jalankan Restore Database
+     * Helper: Jalankan Restore Database (Aman dari implicit commit error)
      */
     private function restoreDatabase(array $tables, string $mode): array
     {
@@ -513,12 +548,19 @@ class BackupController extends Controller
             'settings',
             'users',
             'products',
+            'customers',
             'sales',
             'sale_details',
             'orders',
             'order_items',
             'order_complaints',
         ];
+
+        foreach (array_keys($tables) as $tName) {
+            if (!in_array($tName, $tableOrder)) {
+                $tableOrder[] = $tName;
+            }
+        }
 
         $driver = DB::getDriverName();
         if ($driver === 'mysql') {
@@ -527,14 +569,12 @@ class BackupController extends Controller
             DB::statement('PRAGMA foreign_keys = OFF;');
         }
 
-        DB::beginTransaction();
-
         try {
             if ($mode === 'replace') {
                 $reverseOrder = array_reverse($tableOrder);
                 foreach ($reverseOrder as $tbl) {
                     if (Schema::hasTable($tbl)) {
-                        DB::table($tbl)->truncate();
+                        DB::table($tbl)->delete(); // DELETE aman di dalam MySQL tanpa implicit commit
                     }
                 }
             }
@@ -545,27 +585,41 @@ class BackupController extends Controller
 
                 $rows = $tables[$tbl];
                 $count = 0;
+                $validColumns = Schema::getColumnListing($tbl);
+                $validFlip = array_flip($validColumns);
 
-                foreach ($rows as $row) {
-                    $validColumns = Schema::getColumnListing($tbl);
-                    $filteredRow = array_intersect_key($row, array_flip($validColumns));
+                if ($mode === 'replace') {
+                    $batch = [];
+                    foreach ($rows as $row) {
+                        $filtered = array_intersect_key($row, $validFlip);
+                        if (!empty($filtered)) {
+                            $batch[] = $filtered;
+                            $count++;
+                        }
 
-                    if (empty($filteredRow)) continue;
+                        if (count($batch) >= 100) {
+                            DB::table($tbl)->insert($batch);
+                            $batch = [];
+                        }
+                    }
+                    if (!empty($batch)) {
+                        DB::table($tbl)->insert($batch);
+                    }
+                } else {
+                    foreach ($rows as $row) {
+                        $filtered = array_intersect_key($row, $validFlip);
+                        if (empty($filtered)) continue;
 
-                    if ($mode === 'replace') {
-                        DB::table($tbl)->insert($filteredRow);
-                        $count++;
-                    } else {
-                        if (isset($filteredRow['id'])) {
-                            $id = $filteredRow['id'];
+                        if (isset($filtered['id'])) {
+                            $id = $filtered['id'];
                             $existing = DB::table($tbl)->where('id', $id)->first();
                             if ($existing) {
-                                DB::table($tbl)->where('id', $id)->update($filteredRow);
+                                DB::table($tbl)->where('id', $id)->update($filtered);
                             } else {
-                                DB::table($tbl)->insert($filteredRow);
+                                DB::table($tbl)->insert($filtered);
                             }
                         } else {
-                            DB::table($tbl)->insert($filteredRow);
+                            DB::table($tbl)->insert($filtered);
                         }
                         $count++;
                     }
@@ -574,11 +628,6 @@ class BackupController extends Controller
                 $restoredCounts[$tbl] = $count;
             }
 
-            DB::commit();
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
         } finally {
             if ($driver === 'mysql') {
                 DB::statement('SET FOREIGN_KEY_CHECKS=1;');
