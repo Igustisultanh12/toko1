@@ -25,13 +25,12 @@ use ZipArchive;
 class BackupController extends Controller
 {
     /**
-     * Tampilan Utama Pusat Backup & Migrasi Data (Vue 3 Inertia)
+     * Tampilan Utama Pusat Backup & Migrasi Data (Vue 3 Inertia di Admin Panel)
      */
     public function index()
     {
         $shop = Setting::pluck('value', 'key')->all();
 
-        // Hitung total data statistik
         $stats = [
             'total_products'    => Product::count(),
             'total_sales'       => Sale::count(),
@@ -52,7 +51,6 @@ class BackupController extends Controller
 
     /**
      * Ekspor Paket Lengkap Migrasi (.ZIP)
-     * Berisi: backup_data.json, database.sql, README_MIGRASI.txt, dan seluruh file upload di storage/app/public/
      */
     public function exportZip()
     {
@@ -70,21 +68,17 @@ class BackupController extends Controller
         }
 
         try {
-            // 1. Ekspor Data JSON
             $jsonData = $this->collectAllData();
             $jsonFilePath = "{$tempDir}/backup_data.json";
             File::put($jsonFilePath, json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
-            // 2. Ekspor SQL Dump
             $sqlContent = $this->generateSqlDump($jsonData);
             $sqlFilePath = "{$tempDir}/database.sql";
             File::put($sqlFilePath, $sqlContent);
 
-            // 3. Buat File Petunjuk Migrasi
             $readmeContent = $this->generateReadme($cleanAppName, $timestamp, $jsonData['metadata']['counts']);
             File::put("{$tempDir}/README_MIGRASI.txt", $readmeContent);
 
-            // 4. Buat File ZIP
             $zipPath = storage_path("app/{$zipFileName}");
             
             if (class_exists('ZipArchive')) {
@@ -94,7 +88,6 @@ class BackupController extends Controller
                     $zip->addFile($sqlFilePath, 'database.sql');
                     $zip->addFile("{$tempDir}/README_MIGRASI.txt", 'README_MIGRASI.txt');
 
-                    // Tambahkan seluruh file storage publik
                     $publicStoragePath = storage_path('app/public');
                     if (File::exists($publicStoragePath)) {
                         $files = File::allFiles($publicStoragePath);
@@ -104,7 +97,6 @@ class BackupController extends Controller
                         }
                     }
 
-                    // Folder upload langsung di storage/app jika ada
                     $extraFolders = ['products', 'favicons', 'logos', 'audio', 'complaints'];
                     foreach ($extraFolders as $folder) {
                         $extraPath = storage_path("app/{$folder}");
@@ -178,7 +170,7 @@ class BackupController extends Controller
     }
 
     /**
-     * Proses Impor & Pemulihan (Restore) Data dari File Backup (.ZIP / .JSON)
+     * Proses Impor & Pemulihan (Restore) Data dari File Backup via Admin Panel
      */
     public function import(Request $request)
     {
@@ -194,16 +186,179 @@ class BackupController extends Controller
         ]);
 
         $uploadedFile = $request->file('backup_file');
-        $extension = strtolower($uploadedFile->getClientOriginalExtension());
         $mode = $request->input('mode', 'replace');
 
-        $jsonData = null;
+        $result = $this->processRestoreFile($uploadedFile, $mode);
+
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
+        }
+
+        return back()->with('success', $result['message']);
+    }
+
+    /**
+     * Portal Upload & Migrasi Terpadu (/migrasibaru)
+     * - GET: Menampilkan form upload file migrasi & opsi mode
+     * - POST: Memproses migrasi database, storage symlink, dan restore data dari file yang diunggah
+     */
+    public function migrasibaru(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300);
+
+        // Jika request GET: Tampilkan Form Upload Migrasi
+        if ($request->isMethod('get')) {
+            return response()->view('migrasibaru', [
+                'hasSubmitted' => false,
+                'results'      => [],
+                'hasError'     => false,
+                'stats'        => [
+                    'products' => Schema::hasTable('products') ? Product::count() : 0,
+                    'users'    => Schema::hasTable('users') ? User::count() : 0,
+                    'orders'   => Schema::hasTable('orders') ? Order::count() : 0,
+                ],
+            ]);
+        }
+
+        // Jika request POST: Jalankan proses migrasi & pemulihan
+        $results = [];
+        $hasError = false;
+        $mode = $request->input('mode', 'replace');
+
+        try {
+            // 1. Eksekusi Migrasi Struktur Database
+            Artisan::call('migrate', ['--force' => true]);
+            $migrateOutput = Artisan::output();
+            $results[] = [
+                'title'   => 'Struktur Database (Migration)',
+                'status'  => 'SUCCESS',
+                'message' => trim($migrateOutput) ?: 'Semua skema tabel database siap dan ter-update.',
+            ];
+
+            // 2. Buat Storage Symlink
+            try {
+                Artisan::call('storage:link');
+                $storageOutput = Artisan::output();
+                $results[] = [
+                    'title'   => 'Folder Media Storage (Symlink)',
+                    'status'  => 'SUCCESS',
+                    'message' => trim($storageOutput) ?: 'Symlink folder media publik terhubung.',
+                ];
+            } catch (\Exception $se) {
+                $results[] = [
+                    'title'   => 'Folder Media Storage (Symlink)',
+                    'status'  => 'INFO',
+                    'message' => 'Symlink storage sudah siap.',
+                ];
+            }
+
+            // 3. Jika Ada File Backup yang Diunggah (.ZIP / .JSON / .SQL)
+            if ($request->hasFile('backup_file')) {
+                $uploadedFile = $request->file('backup_file');
+                $restoreRes = $this->processRestoreFile($uploadedFile, $mode);
+
+                if ($restoreRes['success']) {
+                    $results[] = [
+                        'title'   => 'Pemulihan Data & Media dari File Backup',
+                        'status'  => 'SUCCESS',
+                        'message' => $restoreRes['message'],
+                    ];
+                } else {
+                    $hasError = true;
+                    $results[] = [
+                        'title'   => 'Pemulihan File Backup',
+                        'status'  => 'ERROR',
+                        'message' => $restoreRes['message'],
+                    ];
+                }
+            } else {
+                // Jika tidak unggah file, cek akun admin default
+                if (Schema::hasTable('users') && User::count() === 0) {
+                    User::create([
+                        'name'     => 'Administrator Toko',
+                        'email'    => 'admin@sultanweb.id',
+                        'password' => Hash::make('password'),
+                        'role'     => 'admin',
+                    ]);
+                    User::create([
+                        'name'     => 'Kasir Toko',
+                        'email'    => 'kasir@sultanweb.id',
+                        'password' => Hash::make('password'),
+                        'role'     => 'cashier',
+                    ]);
+                    $results[] = [
+                        'title'   => 'Inisialisasi Akun Petugas Baru',
+                        'status'  => 'SUCCESS',
+                        'message' => 'Dibuat 2 akun default: admin@sultanweb.id (Admin) & kasir@sultanweb.id (Kasir). Password: "password".',
+                    ];
+                }
+
+                if (Schema::hasTable('settings') && Setting::count() === 0) {
+                    Setting::create(['key' => 'shop_name', 'value' => 'SIBALOG STORE']);
+                    Setting::create(['key' => 'app_name', 'value' => 'SIBALOG POS & ONLINE STORE']);
+                    Setting::create(['key' => 'shop_phone', 'value' => '081234567890']);
+                    Setting::create(['key' => 'shop_address', 'value' => 'Jl. Raya Utama No. 123']);
+                }
+
+                $results[] = [
+                    'title'   => 'Status Database',
+                    'status'  => 'INFO',
+                    'message' => 'Database kosong berhasil disiapkan. Anda dapat login menggunakan akun default.',
+                ];
+            }
+
+            // 4. Bersihkan Cache Laravel
+            Artisan::call('optimize:clear');
+            Artisan::call('optimize');
+            $results[] = [
+                'title'   => 'Optimasi Performa Sistem',
+                'status'  => 'SUCCESS',
+                'message' => 'Cache route, config, dan views berhasil disegarkan.',
+            ];
+
+        } catch (\Exception $e) {
+            $hasError = true;
+            $results[] = [
+                'title'   => 'Terjadi Kendala',
+                'status'  => 'ERROR',
+                'message' => $e->getMessage(),
+            ];
+            Log::error("Gagal menjalankan migrasi baru: " . $e->getMessage());
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => !$hasError,
+                'results' => $results,
+            ]);
+        }
+
+        return response()->view('migrasibaru', [
+            'hasSubmitted' => true,
+            'results'      => $results,
+            'hasError'     => $hasError,
+            'time'         => Carbon::now()->translatedFormat('d F Y, H:i:s'),
+            'stats'        => [
+                'products' => Schema::hasTable('products') ? Product::count() : 0,
+                'users'    => Schema::hasTable('users') ? User::count() : 0,
+                'orders'   => Schema::hasTable('orders') ? Order::count() : 0,
+            ],
+        ]);
+    }
+
+    /**
+     * Helper: Memproses File Restore (.ZIP, .JSON, .SQL)
+     */
+    private function processRestoreFile($uploadedFile, string $mode): array
+    {
+        $extension = strtolower($uploadedFile->getClientOriginalExtension());
         $tempExtractDir = storage_path('app/temp_restore_' . time());
 
         try {
             if ($extension === 'zip') {
                 if (!class_exists('ZipArchive')) {
-                    throw new \Exception('Ekstensi PHP ZipArchive tidak aktif untuk membaca file ZIP.');
+                    throw new \Exception('Ekstensi PHP ZipArchive tidak aktif di server ini.');
                 }
 
                 $zip = new ZipArchive();
@@ -217,6 +372,7 @@ class BackupController extends Controller
                     }
                     $jsonData = json_decode(File::get($jsonPath), true);
 
+                    // Salin seluruh file storage (foto produk, galeri, dll)
                     $extractedStorage = "{$tempExtractDir}/storage";
                     if (File::exists($extractedStorage)) {
                         $targetStorage = storage_path('app/public');
@@ -225,174 +381,54 @@ class BackupController extends Controller
                         }
                         File::copyDirectory($extractedStorage, $targetStorage);
                     }
+
+                    $restoredCounts = $this->restoreDatabase($jsonData['tables'] ?? [], $mode);
+
                 } else {
-                    throw new \Exception('Gagal membuka file arsip ZIP.');
+                    throw new \Exception('Gagal mengekstrak arsip ZIP.');
                 }
+
             } elseif ($extension === 'json') {
                 $jsonData = json_decode(File::get($uploadedFile->getRealPath()), true);
+                if (!$jsonData || !isset($jsonData['tables'])) {
+                    throw new \Exception('Struktur file JSON tidak valid.');
+                }
+                $restoredCounts = $this->restoreDatabase($jsonData['tables'], $mode);
+
+            } elseif ($extension === 'sql') {
+                $sqlContent = File::get($uploadedFile->getRealPath());
+                DB::unprepared($sqlContent);
+                $restoredCounts = ['sql_executed' => 1];
             } else {
-                throw new \Exception('Format file tidak didukung. Harap unggah file .zip atau .json.');
+                throw new \Exception('Format file tidak didukung. Harap unggah file .zip, .json, atau .sql.');
             }
-
-            if (!$jsonData || !isset($jsonData['tables'])) {
-                throw new \Exception('Struktur file backup tidak valid atau rusak.');
-            }
-
-            $restoredCounts = $this->restoreDatabase($jsonData['tables'], $mode);
 
             if (File::exists($tempExtractDir)) {
                 File::deleteDirectory($tempExtractDir);
             }
 
-            Artisan::call('optimize:clear');
-
             $modeLabel = ($mode === 'replace') ? 'Mode Timpa Bersih' : 'Mode Gabungkan';
-            $summary = "Pemulihan data selesai ({$modeLabel}). Berhasil memulihkan: " . implode(', ', array_map(
+            $summary = "Pemulihan data berhasil ({$modeLabel}). Rincian data: " . implode(', ', array_map(
                 fn($k, $v) => "{$v} {$k}",
                 array_keys($restoredCounts),
                 array_values($restoredCounts)
             ));
 
-            return back()->with('success', $summary);
+            return [
+                'success' => true,
+                'message' => $summary,
+            ];
 
         } catch (\Exception $e) {
             if (File::exists($tempExtractDir)) {
                 File::deleteDirectory($tempExtractDir);
             }
-            Log::error("Gagal restore backup: " . $e->getMessage());
-            return back()->with('error', 'Gagal memulihkan data: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Jalur Migrasi Langsung Satu-Klik (/migrasibaru)
-     * Menjalankan:
-     * 1. php artisan migrate --force
-     * 2. Buat akun Admin default jika belum ada
-     * 3. Buat setelan default jika belum ada
-     * 4. php artisan storage:link
-     * 5. php artisan optimize:clear & optimize
-     */
-    public function migrasibaru(Request $request)
-    {
-        ini_set('max_execution_time', 300);
-
-        $results = [];
-        $hasError = false;
-
-        try {
-            // 1. Jalankan Database Migration
-            Artisan::call('migrate', ['--force' => true]);
-            $migrateOutput = Artisan::output();
-            $results[] = [
-                'title'   => 'Database Migration',
-                'status'  => 'SUCCESS',
-                'message' => trim($migrateOutput) ?: 'Semua tabel database berhasil dimigrasi.',
-            ];
-
-            // 2. Cek & Buat Akun Pengguna Default jika tabel kosong
-            if (Schema::hasTable('users')) {
-                $userCount = User::count();
-                if ($userCount === 0) {
-                    $admin = User::create([
-                        'name'     => 'Administrator Toko',
-                        'email'    => 'admin@sultanweb.id',
-                        'password' => Hash::make('password'),
-                        'role'     => 'admin',
-                    ]);
-
-                    User::create([
-                        'name'     => 'Kasir Toko',
-                        'email'    => 'kasir@sultanweb.id',
-                        'password' => Hash::make('password'),
-                        'role'     => 'cashier',
-                    ]);
-
-                    $results[] = [
-                        'title'   => 'Inisialisasi Akun Petugas Default',
-                        'status'  => 'SUCCESS',
-                        'message' => 'Dibuat 2 akun default: admin@sultanweb.id (Admin) & kasir@sultanweb.id (Kasir) dengan password default: "password".',
-                    ];
-                } else {
-                    $results[] = [
-                        'title'   => 'Akun Petugas',
-                        'status'  => 'INFO',
-                        'message' => "Terdapat {$userCount} akun petugas yang sudah terdaftar di sistem.",
-                    ];
-                }
-            }
-
-            // 3. Cek & Buat Pengaturan Toko Default
-            if (Schema::hasTable('settings')) {
-                $defaultSettings = [
-                    'shop_name'     => 'SIBALOG STORE',
-                    'app_name'      => 'SIBALOG POS & ONLINE STORE',
-                    'shop_phone'    => '081234567890',
-                    'shop_address'  => 'Jl. Raya Utama No. 123, Indonesia',
-                    'footer_note'   => 'Terima kasih atas kunjungan dan kepercayaan Anda.',
-                ];
-
-                foreach ($defaultSettings as $key => $val) {
-                    Setting::firstOrCreate(['key' => $key], ['value' => $val]);
-                }
-
-                $results[] = [
-                    'title'   => 'Pengaturan Toko',
-                    'status'  => 'SUCCESS',
-                    'message' => 'Pengaturan nama toko, alamat, dan profil awal berhasil dikonfigurasi.',
-                ];
-            }
-
-            // 4. Buat Symlink Storage
-            try {
-                Artisan::call('storage:link');
-                $storageOutput = Artisan::output();
-                $results[] = [
-                    'title'   => 'Storage Symlink',
-                    'status'  => 'SUCCESS',
-                    'message' => trim($storageOutput) ?: 'Symlink folder storage publik berhasil ditautkan.',
-                ];
-            } catch (\Exception $se) {
-                $results[] = [
-                    'title'   => 'Storage Symlink',
-                    'status'  => 'INFO',
-                    'message' => 'Storage symlink sudah ada atau tidak memerlukan perubahan.',
-                ];
-            }
-
-            // 5. Bersihkan & Buat Ulang Cache Sistem
-            Artisan::call('optimize:clear');
-            Artisan::call('optimize');
-            $results[] = [
-                'title'   => 'Optimasi & Cache Laravel',
-                'status'  => 'SUCCESS',
-                'message' => 'Cache config, route, dan view telah disegarkan untuk performa maksimal.',
-            ];
-
-        } catch (\Exception $e) {
-            $hasError = true;
-            $results[] = [
-                'title'   => 'Terjadi Kendala',
-                'status'  => 'ERROR',
+            Log::error("Gagal memproses file restore: " . $e->getMessage());
+            return [
+                'success' => false,
                 'message' => $e->getMessage(),
             ];
-            Log::error("Gagal menjalankan migrasi baru: " . $e->getMessage());
         }
-
-        // Jika request menginginkan JSON
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => !$hasError,
-                'results' => $results,
-            ]);
-        }
-
-        // Tampilkan HTML modern mandiri (bisa dibuka langsung tanpa login untuk first setup)
-        return response()->view('migrasibaru', [
-            'results'  => $results,
-            'hasError' => $hasError,
-            'time'     => Carbon::now()->translatedFormat('d F Y, H:i:s'),
-        ]);
     }
 
     /**
@@ -579,14 +615,9 @@ Dibuat Oleh   : Sistem Backup Otomatis SIBALOG
 ISI PAKET INI:
 1. backup_data.json  : Berisi seluruh data database terstruktur dalam format JSON.
 2. database.sql      : Dump database MySQL/MariaDB siap import via phpMyAdmin / CLI.
-3. storage/          : Berisi seluruh file upload asli:
-   - products/       : Foto utama produk & galeri multi-foto (products/gallery/)
-   - complaints/     : Bukti foto dan video unboxing komplain pelanggan
-   - logos/          : File logo toko
-   - favicons/       : File favicon aplikasi
-   - audio/          : Suara lonceng kasir transaksi lunas
+3. storage/          : Berisi seluruh file upload asli (foto barang, galeri, logo, dll).
 
-RINGKASAN JUMLAH DATA:
+RINGKASAN DATA:
 - Pengaturan Sistem : {$cSettings} data
 - Akun Pengguna     : {$cUsers} akun
 - Produk & Stok     : {$cProducts} produk
@@ -595,25 +626,6 @@ RINGKASAN JUMLAH DATA:
 - Pesanan Online    : {$cOrders} pesanan
 - Item Pesanan      : {$cOrderItems} item
 - Komplain Masuk    : {$cComplaints} data
-
-================================================================================
-CARA MEMINDAHKAN KE SERVER / APLIKASI BARU:
-================================================================================
-METODE 1 (PALING MUDAH - VIA APLIKASI WEB):
-1. Login ke Panel Admin aplikasi baru.
-2. Buka menu "Backup & Migrasi Data" (atau URL /admin/backup).
-3. Pada bagian "Pulihkan / Impor Data", pilih file .zip ini.
-4. Pilih mode "Timpa Bersih (Fresh Replace)" untuk server baru, lalu klik "Mulai Proses Impor".
-5. Selesai! Semua data database, foto barang, transaksi, dan settingan toko langsung aktif.
-
-METODE 2 (MANUAL VIA SSH / FTP / CPANEL / AAPANEL):
-1. Salin seluruh isi folder "storage/" di zip ini ke folder:
-   /www/wwwroot/domain-anda/storage/app/public/
-2. Import file "database.sql" ke database MySQL/MariaDB baru lewat phpMyAdmin atau terminal:
-   mysql -u user_db -p nama_db < database.sql
-3. Jalankan perintah di server baru:
-   php artisan storage:link
-   php artisan optimize:clear
 ================================================================================
 TXT;
     }
