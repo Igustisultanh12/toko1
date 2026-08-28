@@ -9,15 +9,11 @@ use Illuminate\Support\Facades\Log;
 class TurnstileService
 {
     /**
-     * Cek apakah Turnstile aktif dan kredensial lengkap
+     * Cek apakah Turnstile aktif (Dinonaktifkan)
      */
     public static function isEnabled(): bool
     {
-        $enabled = Setting::where('key', 'turnstile_enabled')->value('value');
-        $siteKey = Setting::where('key', 'turnstile_site_key')->value('value');
-        $secretKey = Setting::where('key', 'turnstile_secret_key')->value('value');
-
-        return ($enabled === '1' && !empty($siteKey) && !empty($secretKey));
+        return false;
     }
 
     /**
@@ -25,36 +21,14 @@ class TurnstileService
      */
     public static function getSiteKey(): ?string
     {
-        return Setting::where('key', 'turnstile_site_key')->value('value');
+        return null;
     }
 
     /**
-     * Verifikasi token Turnstile ke API Cloudflare
+     * Verifikasi token Turnstile (Otomatis lolos)
      */
     public static function verify(?string $token, ?string $ip = null): bool
     {
-        if (!self::isEnabled()) {
-            return true; // Jika tidak diaktifkan di admin, otomatis lolos
-        }
-
-        if (empty($token)) {
-            return false;
-        }
-
-        $secretKey = Setting::where('key', 'turnstile_secret_key')->value('value');
-
-        try {
-            $response = Http::asForm()->timeout(6)->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                'secret'   => $secretKey,
-                'response' => $token,
-                'remoteip' => $ip,
-            ]);
-
-            $data = $response->json();
-            return !empty($data['success']) && $data['success'] === true;
-        } catch (\Exception $e) {
-            Log::warning('Cloudflare Turnstile Verification Warning: ' . $e->getMessage());
-            return true; // fail-open jika API Cloudflare down agar transaksi tidak macet
-        }
+        return true;
     }
 }
