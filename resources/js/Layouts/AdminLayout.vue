@@ -77,6 +77,15 @@
           </Link>
 
           <Link 
+            href="/admin/backup" 
+            :class="isActive('/admin/backup') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
+            class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"
+          >
+            <span class="text-base">🔄</span>
+            <span>Backup & Migrasi</span>
+          </Link>
+
+          <Link 
             href="/admin/users" 
             :class="isActive('/admin/users') ? 'bg-[#00AA13] text-white font-black shadow-lg shadow-emerald-900/30' : 'text-emerald-100/80 hover:bg-white/10 hover:text-white font-bold'"
             class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs uppercase tracking-wider transition group"

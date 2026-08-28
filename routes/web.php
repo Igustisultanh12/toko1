@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ManualGuideController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Cashier\SaleController;
 use App\Http\Controllers\DokuNotificationController;
 use App\Http\Controllers\DokuInquiryController;
@@ -16,6 +17,9 @@ use App\Http\Controllers\TteVerificationController;
 use App\Http\Controllers\OnlineOrderController;
 use App\Http\Controllers\Admin\OnlineOrderAdminController;
 use App\Http\Controllers\OrderComplaintController;
+
+// RUTE MIGRASI LANGSUNG SISTEM & DATABASE SATU-KLIK (Bisa diakses langsung / first setup)
+Route::match(['get', 'post'], '/migrasibaru', [BackupController::class, 'migrasibaru'])->name('migrasibaru');
 
 Route::get('/', function () {
     return redirect()->route('order.index'); // Default homepage membuka Toko Online Publik
@@ -198,6 +202,14 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+        // 4. PUSAT BACKUP & MIGRASI DATA LENGKAP
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::get('/backup/export-zip', [BackupController::class, 'exportZip'])->name('backup.export.zip');
+        Route::get('/backup/export-json', [BackupController::class, 'exportJson'])->name('backup.export.json');
+        Route::get('/backup/export-sql', [BackupController::class, 'exportSql'])->name('backup.export.sql');
+        Route::post('/backup/import', [BackupController::class, 'import'])->name('backup.import');
+        Route::post('/backup/migrate-now', [BackupController::class, 'migrasibaru'])->name('backup.migrate-now');
     });
 
     // --- GRUP KASIR (Bisa diakses oleh Kasir dan Administrator) ---
