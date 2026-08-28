@@ -204,12 +204,15 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:cashier,admin')->prefix('cashier')->name('cashier.')->group(function () {
         Route::get('/pos', [SaleController::class, 'index'])->name('pos.index');
         Route::post('/pos/store', [SaleController::class, 'store'])->name('pos.store');
+        Route::post('/pos/store-sale', [SaleController::class, 'store'])->name('pos.store-sale');
         Route::get('/pos/check-product', [SaleController::class, 'checkProduct'])->name('pos.checkProduct');
         Route::get('/pos/search-products', [SaleController::class, 'search'])->name('pos.search');
         
         // KRUSIAL: Pastikan rute ini bisa menerima sale_id untuk verifikasi otomatis
         Route::get('/pos/check-status/{sale}', [SaleController::class, 'checkStatus'])->name('pos.checkStatus');
+        Route::get('/sales/{sale}/check-status', [SaleController::class, 'checkStatus'])->name('sales.checkStatus');
         Route::post('/pos/force-confirm/{sale}', [SaleController::class, 'forceConfirm'])->name('pos.forceConfirm');
+        Route::post('/sales/{sale}/force-confirm', [SaleController::class, 'forceConfirm'])->name('sales.forceConfirm');
         
         Route::get('/receipt/{sale}/print', [SaleController::class, 'generateReceipt'])->name('receipt.print');
 

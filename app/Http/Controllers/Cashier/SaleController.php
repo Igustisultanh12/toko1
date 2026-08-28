@@ -58,14 +58,22 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
+        $total = $request->input('total') ?? $request->input('total_amount');
+        $amountPaid = $request->input('amount_paid') ?? $request->input('cash_given') ?? $total;
+
+        $request->merge([
+            'total'       => $total,
+            'amount_paid' => $amountPaid,
+        ]);
+
         $request->validate([
-            'customer_name' => 'nullable|string|max:100',
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'customer_name'  => 'nullable|string|max:100',
+            'items'          => 'required|array|min:1',
+            'items.*.id'     => 'required|exists:products,id',
+            'items.*.quantity'=> 'required|integer|min:1',
             'payment_method' => 'required|in:cash,qris',
-            'total' => 'required|numeric',
-            'amount_paid' => 'required|numeric'
+            'total'          => 'required|numeric',
+            'amount_paid'    => 'required|numeric'
         ]);
 
         DB::beginTransaction();
@@ -129,6 +137,8 @@ class SaleController extends Controller
             return response()->json([
                 'success'            => true,
                 'sale'               => $sale,
+                'sale_id'            => $sale->id,
+                'qris_url'           => $qrString,
                 'qr_string'          => $qrString,
                 'signed_invoice_url' => $signedInvoiceUrl
             ]);
